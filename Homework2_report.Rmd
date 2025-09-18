@@ -6,7 +6,7 @@ output: html_document
 
 ## Name
 
-Please enter your name here.
+Shaikh Ibrahim Noman
 
 ### Setup
 
@@ -15,7 +15,9 @@ Read in the data with `read_csv()` and store the data as an R object named `data
 
 ```{r}
 ## Load the data and any necessary packages here.
-
+library(tidyverse)
+dataset <- read.csv('maacs.csv.gz')
+head(dataset, 10)
 ```
 
 ## Part 1
@@ -31,8 +33,24 @@ NOTE: In order to write this function, you will need to translate the statement 
 NOTE: For this part, do not use any plots.
 
 ```{r}
-## Write your function here
+## To see the relationship between two variables you can check the correlation
+fev1_age_relationship <- function(dataset){
+  
+  # Calculating the correlation between age and fev1
+  correlation = cor(dataset$age, dataset$fev1, use = 'complete.obs')
+  
+  # Checking using if-else
+  # If variables are directly correlated (Both go up together) return true
+  if (correlation >= 0.75){
+    return(TRUE)
+  # Otherwise return false
+  } else {
+    return(FALSE)
+  }
+}
 
+# Calling the function
+fev1_age_relationship(data = dataset)
 ```
 
 
@@ -42,15 +60,17 @@ Fit a linear regression model with FEV1 as the outcome and age as a predictor.
 
 How much does FEV1 change for a 1-year increase in the child's age? 
 
-```{r}
-## Add your code here
+FEV1 increases by 0.171 liters for each 1-year increase in the child's age.
 
+```{r}
+model <- lm(fev1 ~ age,  data = dataset)
+summary(model)
 ```
 
 
 Write your data analysis statement interpreting the regression model here:
 
-
+Since the p-value for age is less than 0.05, age is a statistically significant predictor of FEV1. The positive regression coefficient indicates that FEV1 tends to increase as age increases.
 
 ## Part 3
 
@@ -59,18 +79,36 @@ Develop **three** supporting premises derived from the data that support the sta
 NOTE: At least one supporting premise should use a plot.
 
 ```{r}
-## Add your code here
+# 1. Scatter plot
+ggplot(dataset) +
+  aes(x = age, y = fev1) +
+  geom_point(color = 'red')
 
+# 2. Getting mean in different age groups (summary statistics)
+## Create two age groups: younger and older
+age_data <- dataset %>%
+  mutate(age_group = ifelse(age <= median(age, na.rm = TRUE), 'Younger', 'Older'))
+
+## Compare mean FEV1 between groups
+group_means <- age_data %>%
+  group_by(age_group) %>%
+  summarise(mean_fev1 = mean(fev1, na.rm = TRUE))
+group_means
+
+# 3. R-Squared (Model Output)
+model_summary <- summary(model)
+r_squared <- model_summary$r.squared
+cat('R-Squared:', r_squared)
 ```
 
 
 Write the three supporting premise statements here:
 
-1. 
+1. In the scatter plot, there is a direct positive relationship between `age` and `fev1`.
 
-2. 
+2. When analyzing the mean of `fev1` between older and younger children, we can see the mean is greater for older (2.54) compared to younger (1.33)
 
-3. 
+3. The regression model that includes age explains about 64.7% of the variation in fev1 (R-squared = 0.6469). This relatively high R-squared indicates that age is an important predictor and provides strong evidence of its positive association with fev1.
 
 
 ## Part 4
@@ -86,19 +124,78 @@ For statements involving plots, instead of returning `TRUE` or `FALSE`, you func
 
 ```{r}
 ## Function for supporting premise statement 1
+premise1_plot <- function(dataset){
+  
+  # 1. Producing the statement plot
+  statement_plot <- ggplot(dataset) +
+    aes(x = age, y = fev1) +
+    geom_point(color = 'red')
+  
+  print(statement_plot)
+  
+  # 2. Simulate data assuming statement is true
+  set.seed(7) # for reproducibility
+  n <- nrow(dataset)
+  hypothetical_data <- data.frame(
+    age = dataset$age,
+    fev1 = 1 + 0.1 * dataset$age + rnorm(n, 0, 0.2) # linear increase with small noise
+  )
+  
+  hypothetical_plot <- ggplot(hypothetical_data) +
+    aes(x = age, y = fev1) +
+    geom_point(color = 'blue') 
+  
+  print(hypothetical_plot)
+}
 
+premise1_plot(dataset = dataset)
 ```
 
 
 ```{r}
 ## Function for supporting premise statement 2
+premise2 <- function(dataset){
+  
+  # Calculating the group means
+  age_data <- dataset %>%
+  mutate(age_group = ifelse(age <= median(age, na.rm = TRUE), 'Younger', 'Older'))
+  group_means <- age_data %>%
+    group_by(age_group) %>%
+    summarise(mean_fev1 = mean(fev1, na.rm = TRUE))
+  
+  # Extract means
+  younger_mean <- group_means$mean_fev1[group_means$age_group == 'Younger']
+  older_mean   <- group_means$mean_fev1[group_means$age_group == 'Older']
+  
+  # If older mean > younger mean, return TRUE
+  if (older_mean > younger_mean){
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+}
 
+premise2(dataset = dataset)
 ```
 
 
 ```{r}
 ## Function for supporting premise statement 3
+premise3 <- function(dataset){
+  
+  # Getting r-squared value
+  model_summary <- summary(model)
+  r_squared <- model_summary$r.squared
+  
+  # If else statement
+  if (r_squared > 0.5){
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+}
 
+premise3(dataset = dataset)
 ```
 
 Execute each of your function and show that the produce the expected output.
@@ -110,8 +207,8 @@ Execute each of your function and show that the produce the expected output.
 
 Describe one alternative to the primary statement "FEV1 values in children are higher in older children relative to younger children". 
 
-Create a fault tree for the alternative outcome describing how the alternative outcome could be realized in the data even if the primary statement were true.
+Alternative Statement: FEV1 values in children do not increase with age, and younger children may have similar or even higher FEV1 values compared to older children.
 
-Your fault tree should be created as a separate image and does not need to be created in R. Upload the image of the fault tree to Canvas.
+Fault tree is located in Canvas.
 
 
